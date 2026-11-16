@@ -58,6 +58,71 @@ public class Product : BaseEntity
         MarkAsUpdated();
     }
 
+    public void UpdateDetails(
+        string name,
+        string description,
+        Guid categoryId)
+    {
+        EnsureNotDeleted();
+
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException(
+                "Product name is required.",
+                nameof(name)
+            );
+
+        if (categoryId == Guid.Empty)
+            throw new ArgumentException(
+                "Category ID is required.",
+                nameof(categoryId)
+            );
+
+        Name = name.Trim();
+        Description = description?.Trim() ?? string.Empty;
+        CategoryId = categoryId;
+
+        MarkAsUpdated();
+    }
+
+    // Update all product information atomically
+    public void Update(
+        string name,
+        string description,
+        decimal price,
+        Guid categoryId)
+    {
+        // 1. Check product status
+        EnsureNotDeleted();
+
+        // 2. Validate all inputs before changing anything
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException(
+                "Product name is required.",
+                nameof(name)
+            );
+
+        if (price <= 0)
+            throw new ArgumentOutOfRangeException(
+                nameof(price)
+            );
+
+        if (categoryId == Guid.Empty)
+            throw new ArgumentException(
+                "Category ID is required.",
+                nameof(categoryId)
+            );
+
+        // 3. Apply all changes
+        Name = name.Trim();
+        Description = description?.Trim() ?? string.Empty;
+        Price = price;
+        CategoryId = categoryId;
+
+        // 4. Mark entity as updated
+        MarkAsUpdated();
+    }
+
+
     // Increase stock
     public void IncreaseStock(int quantity)
     {
