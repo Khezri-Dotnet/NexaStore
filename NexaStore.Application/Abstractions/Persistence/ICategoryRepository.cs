@@ -19,4 +19,14 @@ public interface ICategoryRepository
         CancellationToken cancellationToken = default
     );
     void Remove(Category category);
+
+    Task<bool> ExistsByNameAsync(
+        string name,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<bool> HasProductsAsync(
+        Guid categoryId,
+        CancellationToken cancellationToken = default
+    );
 }

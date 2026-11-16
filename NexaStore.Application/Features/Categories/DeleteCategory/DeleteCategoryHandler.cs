@@ -12,7 +12,6 @@ public sealed class DeleteCategoryHandler
     {
         _unitOfWork = unitOfWork;
     }
-
     public async Task<Result> Handle(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -23,7 +22,29 @@ public sealed class DeleteCategoryHandler
         );
 
         if (category is null)
-            throw new KeyNotFoundException("Category was not found.");
+        {
+            return Result.Failure(
+                new Error(
+                    "Category.NotFound",
+                    "Category was not found."
+                )
+            );
+        }
+
+        var hasProducts = await _unitOfWork.Categories.HasProductsAsync(
+            id,
+            cancellationToken
+        );
+
+        if (hasProducts)
+        {
+            return Result.Failure(
+                new Error(
+                    "Category.HasProducts",
+                    "Cannot delete a category that contains products."
+                )
+            );
+        }
 
         _unitOfWork.Categories.Remove(category);
 

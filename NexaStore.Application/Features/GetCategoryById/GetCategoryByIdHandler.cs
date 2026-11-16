@@ -25,8 +25,12 @@ public sealed class GetCategoryByIdHandler
 
         if (category is null)
         {
-            // خطای NotFound را در مرحله بعد با الگوی Error پروژه هماهنگ می‌کنیم.
-            throw new KeyNotFoundException("Category was not found.");
+            return Result<CategoryResponse>.Failure(
+                new Error(
+                    "Category.NotFound",
+                    "Category was not found."
+                )
+            );
         }
 
         var response = new CategoryResponse(

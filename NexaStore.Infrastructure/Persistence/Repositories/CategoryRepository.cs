@@ -45,4 +45,21 @@ public sealed class CategoryRepository : ICategoryRepository
     {
         _context.Categories.Remove(category);
     }
+
+    public async Task<bool> ExistsByNameAsync(
+    string name,
+    CancellationToken cancellationToken = default)
+    {
+        return await _context.Categories
+            .AnyAsync(x => x.Name.ToLower() == name.ToLower(), cancellationToken);
+    }
+
+    public async Task<bool> HasProductsAsync(
+    Guid categoryId,
+    CancellationToken cancellationToken = default)
+    {
+        return await _context.Products
+            .AnyAsync(x => x.CategoryId == categoryId, cancellationToken);
+    }
+    
 }

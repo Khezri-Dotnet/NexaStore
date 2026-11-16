@@ -1,4 +1,6 @@
+
 using Microsoft.AspNetCore.Mvc;
+using NexaStore.Application.Common.Results;
 using NexaStore.Application.Features.Categories.CreateCategory;
 using NexaStore.Application.Features.Categories.DTOs;
 using NexaStore.Application.Features.Categories.GetCategoryById;
@@ -18,11 +20,12 @@ public sealed class CategoriesController : ControllerBase
     private readonly UpdateCategoryHandler _updateCategoryHandler;
     private readonly DeleteCategoryHandler _deleteCategoryHandler;
 
-    public CategoriesController(CreateCategoryHandler handler,
-     GetCategoryByIdHandler getCategoryByIdHandler,
-     GetAllCategoriesHandler getAllCategoriesHandler,
-     UpdateCategoryHandler updateCategoryHandler,
-     DeleteCategoryHandler deleteCategoryHandler)
+    public CategoriesController(
+        CreateCategoryHandler handler,
+        GetCategoryByIdHandler getCategoryByIdHandler,
+        GetAllCategoriesHandler getAllCategoriesHandler,
+        UpdateCategoryHandler updateCategoryHandler,
+        DeleteCategoryHandler deleteCategoryHandler)
     {
         _handler = handler;
         _getCategoryByIdHandler = getCategoryByIdHandler;
@@ -36,13 +39,10 @@ public sealed class CategoriesController : ControllerBase
         CreateCategoryRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await _handler.Handle(
-            request,
-            cancellationToken
-        );
+        var result = await _handler.Handle(request, cancellationToken);
 
         if (result.IsFailure)
-            return BadRequest(result.Error);
+            return HandleError(result.Error);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -62,11 +62,11 @@ public sealed class CategoriesController : ControllerBase
         );
 
         if (result.IsFailure)
-            return NotFound(result.Error);
+            return HandleError(result.Error);
 
         return Ok(result.Value);
     }
-    
+
     [HttpGet]
     public async Task<IActionResult> GetAll(
         CancellationToken cancellationToken)
@@ -76,11 +76,11 @@ public sealed class CategoriesController : ControllerBase
         );
 
         if (result.IsFailure)
-            return BadRequest(result.Error);
+            return HandleError(result.Error);
 
         return Ok(result.Value);
     }
-    
+
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
         Guid id,
@@ -94,11 +94,11 @@ public sealed class CategoriesController : ControllerBase
         );
 
         if (result.IsFailure)
-            return NotFound(result.Error);
+            return HandleError(result.Error);
 
         return NoContent();
     }
-    
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(
         Guid id,
@@ -110,8 +110,23 @@ public sealed class CategoriesController : ControllerBase
         );
 
         if (result.IsFailure)
-            return NotFound(result.Error);
+            return HandleError(result.Error);
 
         return NoContent();
+    }
+
+    private IActionResult HandleError(Error? error)
+    {
+        if (error is null)
+            return BadRequest();
+
+        return error.Code switch
+        {
+            "Category.NotFound" => NotFound(error),
+            "Category.Duplicate" => Conflict(error),
+            "Category.HasProducts" => Conflict(error),
+            "Validation.Failed" => BadRequest(error),
+            _ => BadRequest(error)
+        };
     }
 }
