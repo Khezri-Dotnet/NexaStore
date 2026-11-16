@@ -168,6 +168,77 @@ app.MapGet("/api/products/{id}", async (
 .ProducesProblem(StatusCodes.Status404NotFound)
 .ProducesProblem(StatusCodes.Status500InternalServerError);
 
+app.MapPut("/api/products/{id:guid}", async (
+    Guid id,
+    UpdateProductRequest request,
+    UpdateProductHandler handler,
+    CancellationToken cancellationToken) =>
+{
+    var result = await handler.HandleAsync(
+        id,
+        request,
+        cancellationToken
+    );
+
+    if (result.IsFailure)
+    {
+        var statusCode = result.Error!.Code switch
+        {
+            "Product.NotFound" => StatusCodes.Status404NotFound,
+            "Category.NotFound" => StatusCodes.Status404NotFound,
+            _ => StatusCodes.Status400BadRequest
+        };
+
+        return Results.Problem(
+            title: result.Error.Code,
+            detail: result.Error.Message,
+            statusCode: statusCode
+        );
+    }
+
+    return Results.Ok(result.Value);
+})
+.WithName("UpdateProduct")
+.WithTags("Products")
+.Produces<ProductResponse>(StatusCodes.Status200OK)
+.ProducesProblem(StatusCodes.Status400BadRequest)
+.ProducesProblem(StatusCodes.Status404NotFound);
+
+
+
+
+app.MapDelete("/api/products/{id:guid}", async (
+    Guid id,
+    DeleteProductHandler handler,
+    CancellationToken cancellationToken) =>
+{
+    var result = await handler.HandleAsync(
+        id,
+        cancellationToken
+    );
+
+    if (result.IsFailure)
+    {
+        var statusCode = result.Error!.Code switch
+        {
+            "Product.NotFound" => StatusCodes.Status404NotFound,
+            _ => StatusCodes.Status400BadRequest
+        };
+
+        return Results.Problem(
+            title: result.Error.Code,
+            detail: result.Error.Message,
+            statusCode: statusCode
+        );
+    }
+
+    return Results.NoContent();
+})
+.WithName("DeleteProduct")
+.WithTags("Products")
+.Produces(StatusCodes.Status204NoContent)
+.ProducesProblem(StatusCodes.Status400BadRequest)
+.ProducesProblem(StatusCodes.Status404NotFound);
 
 
 app.Run();
