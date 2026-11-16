@@ -113,11 +113,30 @@ app.MapPost("/api/products", async (
 
 app.MapGet("/api/products", async (
     GetAllProductsHandler handler,
-    CancellationToken cancellationToken) =>
+    int pageNumber = 1,
+    int pageSize = 10,
+    string? search = null,
+    decimal? minPrice = null,
+    decimal? maxPrice = null,
+    CancellationToken cancellationToken = default) =>
 {
-    var result = await handler.HandleAsync(
-        cancellationToken
-    );
+    var query = new GetAllProductsQuery
+    {
+        PageNumber = pageNumber,
+        PageSize = pageSize,
+        Search = search,
+        MinPrice = minPrice,
+        MaxPrice = maxPrice
+    };
+
+    if (pageNumber < 1 || pageSize < 1 || pageSize > 100)
+        return Results.BadRequest(new { message = "Invalid pagination parameters." });
+
+    if (minPrice < 0 || maxPrice < 0 ||
+        (minPrice.HasValue && maxPrice.HasValue && minPrice > maxPrice))
+        return Results.BadRequest(new { message = "Invalid price range." });
+
+    var result = await handler.HandleAsync(query, cancellationToken);
 
     if (result.IsFailure)
     {
@@ -132,7 +151,8 @@ app.MapGet("/api/products", async (
 })
 .WithName("GetAllProducts")
 .WithTags("Products")
-.Produces<IReadOnlyList<ProductResponse>>(StatusCodes.Status200OK)
+.Produces<PagedResult<ProductResponse>>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status400BadRequest)
 .ProducesProblem(StatusCodes.Status500InternalServerError);
 
 
@@ -239,6 +259,7 @@ app.MapDelete("/api/products/{id:guid}", async (
 .Produces(StatusCodes.Status204NoContent)
 .ProducesProblem(StatusCodes.Status400BadRequest)
 .ProducesProblem(StatusCodes.Status404NotFound);
+
 
 
 app.Run();

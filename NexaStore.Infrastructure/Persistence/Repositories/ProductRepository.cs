@@ -1,5 +1,7 @@
+
 using Microsoft.EntityFrameworkCore;
 using NexaStore.Application.Abstractions.Persistence;
+using NexaStore.Application.Features.Products.GetAllProducts;
 using NexaStore.Domain.Entities;
 
 namespace NexaStore.Infrastructure.Persistence.Repositories;
@@ -37,5 +39,49 @@ public sealed class ProductRepository : IProductRepository
         return await _context.Products
             .AsNoTracking()
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<PagedResult<Product>> GetPagedAsync(
+        int pageNumber,
+        int pageSize,
+        string? search,
+        decimal? minPrice,
+        decimal? maxPrice,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Products
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(x => x.Name.Contains(search));
+        }
+
+        if (minPrice.HasValue)
+        {
+            query = query.Where(x => x.Price >= minPrice.Value);
+        }
+
+        if (maxPrice.HasValue)
+        {
+            query = query.Where(x => x.Price <= maxPrice.Value);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderBy(x => x.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<Product>
+        {
+            Items = items,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
     }
 }

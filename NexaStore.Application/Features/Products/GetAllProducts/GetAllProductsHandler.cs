@@ -15,29 +15,37 @@ public sealed class GetAllProductsHandler
         _productRepository = productRepository;
     }
 
-    public async Task<Result<IReadOnlyList<ProductResponse>>> HandleAsync(
+    public async Task<Result<PagedResult<ProductResponse>>> HandleAsync(
+        GetAllProductsQuery query,
         CancellationToken cancellationToken = default)
     {
-        // 1. Retrieve all products
-        var products = await _productRepository.GetAllAsync(
+        var products = await _productRepository.GetPagedAsync(
+            query.PageNumber,
+            query.PageSize,
+            query.Search,
+            query.MinPrice,
+            query.MaxPrice,
             cancellationToken
         );
 
-        // 2. Map entities to response DTOs
-        var response = products
-            .Select(product => new ProductResponse(
-                product.Id,
-                product.Name,
-                product.Description,
-                product.Price,
-                product.StockQuantity,
-                product.CategoryId
-            ))
-            .ToList();
+        var response = new PagedResult<ProductResponse>
+        {
+            Items = products.Items
+                .Select(product => new ProductResponse(
+                    product.Id,
+                    product.Name,
+                    product.Description,
+                    product.Price,
+                    product.StockQuantity,
+                    product.CategoryId
+                ))
+                .ToList(),
 
-        // 3. Return successful result
-        return Result<IReadOnlyList<ProductResponse>>.Success(
-            response
-        );
+            PageNumber = products.PageNumber,
+            PageSize = products.PageSize,
+            TotalCount = products.TotalCount
+        };
+
+        return Result<PagedResult<ProductResponse>>.Success(response);
     }
 }

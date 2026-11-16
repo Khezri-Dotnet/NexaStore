@@ -1,3 +1,4 @@
+
 using Microsoft.EntityFrameworkCore;
 using NexaStore.Domain.Entities;
 
@@ -22,5 +23,8 @@ public sealed class NexaStoreDbContext : DbContext
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(NexaStoreDbContext).Assembly
         );
+
+        modelBuilder.Entity<Product>()
+            .HasQueryFilter(x => !x.IsDeleted);
     }
 }
