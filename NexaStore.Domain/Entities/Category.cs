@@ -32,4 +32,7 @@ public class Category : BaseEntity
 
         MarkAsUpdated();
     }
+
+    public ICollection<Product> Products { get; private set; }
+    = new List<Product>();
 }

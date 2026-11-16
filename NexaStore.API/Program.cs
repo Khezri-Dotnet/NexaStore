@@ -9,11 +9,13 @@ using NexaStore.Application.Features.Products.UpdateProduct;
 using NexaStore.Application.Features.Products.DeleteProduct;
 using NexaStore.Application.Features.Products.DTOs;
 using NexaStore.Application.Common.Results;
+using NexaStore.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Services
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplication();
 // Application Handlers
 builder.Services.AddScoped<CreateProductHandler>();
 builder.Services.AddScoped<GetProductByIdHandler>();

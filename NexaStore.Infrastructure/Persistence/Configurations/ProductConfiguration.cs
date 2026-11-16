@@ -34,5 +34,12 @@ public sealed class ProductConfiguration
         builder.HasQueryFilter(x => !x.IsDeleted);
 
         builder.HasIndex(x => x.CategoryId);
+
+        builder
+        .HasOne(x => x.Category)
+        .WithMany(x => x.Products)
+        .HasForeignKey(x => x.CategoryId)
+        .IsRequired()
+        .OnDelete(DeleteBehavior.Restrict);
     }
 }

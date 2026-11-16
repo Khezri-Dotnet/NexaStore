@@ -20,12 +20,14 @@ public sealed class ProductsController : ControllerBase
         _getAllProductsHandler = getAllProductsHandler;
         _updateProductHandler = updateProductHandler;
     }
-
+    
     [HttpGet]
     public async Task<IActionResult> GetAll(
+        [FromQuery] GetAllProductsQuery query,
         CancellationToken cancellationToken)
     {
         var result = await _getAllProductsHandler.HandleAsync(
+            query,
             cancellationToken
         );
 

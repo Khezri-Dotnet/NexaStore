@@ -18,4 +18,5 @@ public interface ICategoryRepository
         Category category,
         CancellationToken cancellationToken = default
     );
+    void Remove(Category category);
 }

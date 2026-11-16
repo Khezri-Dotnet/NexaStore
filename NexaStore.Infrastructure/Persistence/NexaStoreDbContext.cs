@@ -24,7 +24,7 @@ public sealed class NexaStoreDbContext : DbContext
             typeof(NexaStoreDbContext).Assembly
         );
 
-        modelBuilder.Entity<Product>()
-            .HasQueryFilter(x => !x.IsDeleted);
+        // modelBuilder.Entity<Product>()
+        //     .HasQueryFilter(x => !x.IsDeleted);
     }
 }

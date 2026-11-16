@@ -168,4 +168,5 @@ public class Product : BaseEntity
             throw new InvalidOperationException(
                 "Deleted product cannot be modified.");
     }
+    public Category Category { get; private set; } = null!;
 }

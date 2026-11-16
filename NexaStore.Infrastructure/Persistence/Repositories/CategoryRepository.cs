@@ -41,4 +41,8 @@ public sealed class CategoryRepository : ICategoryRepository
             cancellationToken
         );
     }
+    public void Remove(Category category)
+    {
+        _context.Categories.Remove(category);
+    }
 }
