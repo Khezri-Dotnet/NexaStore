@@ -1,3 +1,4 @@
+
 using NexaStore.Application.Abstractions.Persistence;
 using NexaStore.Application.Common.Results;
 
@@ -5,14 +6,10 @@ namespace NexaStore.Application.Features.Products.DeleteProduct;
 
 public sealed class DeleteProductHandler
 {
-    private readonly IProductRepository _productRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public DeleteProductHandler(
-        IProductRepository productRepository,
-        IUnitOfWork unitOfWork)
+    public DeleteProductHandler(IUnitOfWork unitOfWork)
     {
-        _productRepository = productRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -20,7 +17,7 @@ public sealed class DeleteProductHandler
         Guid productId,
         CancellationToken cancellationToken = default)
     {
-        var product = await _productRepository.GetByIdAsync(
+        var product = await _unitOfWork.Products.GetByIdAsync(
             productId,
             cancellationToken
         );

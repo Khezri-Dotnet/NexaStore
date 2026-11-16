@@ -7,25 +7,22 @@ namespace NexaStore.Application.Features.Products.GetProductById;
 
 public sealed class GetProductByIdHandler
 {
-    private readonly IProductRepository _productRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetProductByIdHandler(
-        IProductRepository productRepository)
+    public GetProductByIdHandler(IUnitOfWork unitOfWork)
     {
-        _productRepository = productRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<ProductResponse>> HandleAsync(
         Guid productId,
         CancellationToken cancellationToken = default)
     {
-        // 1. Retrieve product from repository
-        var product = await _productRepository.GetByIdAsync(
+        var product = await _unitOfWork.Products.GetByIdAsync(
             productId,
             cancellationToken
         );
 
-        // 2. Check whether product exists
         if (product is null)
         {
             return Result<ProductResponse>.Failure(
@@ -36,7 +33,6 @@ public sealed class GetProductByIdHandler
             );
         }
 
-        // 3. Map entity to response DTO
         var response = new ProductResponse(
             product.Id,
             product.Name,
@@ -46,7 +42,6 @@ public sealed class GetProductByIdHandler
             product.CategoryId
         );
 
-        // 4. Return successful result
         return Result<ProductResponse>.Success(response);
     }
 }

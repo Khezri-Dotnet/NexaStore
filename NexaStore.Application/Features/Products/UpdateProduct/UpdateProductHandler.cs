@@ -7,17 +7,10 @@ namespace NexaStore.Application.Features.Products.UpdateProduct;
 
 public sealed class UpdateProductHandler
 {
-    private readonly IProductRepository _productRepository;
-    private readonly ICategoryRepository _categoryRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateProductHandler(
-        IProductRepository productRepository,
-        ICategoryRepository categoryRepository,
-        IUnitOfWork unitOfWork)
+    public UpdateProductHandler(IUnitOfWork unitOfWork)
     {
-        _productRepository = productRepository;
-        _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -27,7 +20,7 @@ public sealed class UpdateProductHandler
         CancellationToken cancellationToken = default)
     {
         // 1. Find product
-        var product = await _productRepository.GetByIdAsync(
+        var product = await _unitOfWork.Products.GetByIdAsync(
             productId,
             cancellationToken
         );
@@ -43,7 +36,7 @@ public sealed class UpdateProductHandler
         }
 
         // 2. Check category
-        var category = await _categoryRepository.GetByIdAsync(
+        var category = await _unitOfWork.Categories.GetByIdAsync(
             request.CategoryId,
             cancellationToken
         );
@@ -58,7 +51,7 @@ public sealed class UpdateProductHandler
             );
         }
 
-       // 3. Update product using atomic Domain method
+        // 3. Update product
         try
         {
             product.Update(
@@ -97,9 +90,7 @@ public sealed class UpdateProductHandler
         }
 
         // 4. Save changes
-        await _unitOfWork.SaveChangesAsync(
-            cancellationToken
-        );
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // 5. Map to response
         var response = new ProductResponse(

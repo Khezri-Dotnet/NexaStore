@@ -7,19 +7,18 @@ namespace NexaStore.Application.Features.Products.GetAllProducts;
 
 public sealed class GetAllProductsHandler
 {
-    private readonly IProductRepository _productRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetAllProductsHandler(
-        IProductRepository productRepository)
+    public GetAllProductsHandler(IUnitOfWork unitOfWork)
     {
-        _productRepository = productRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<PagedResult<ProductResponse>>> HandleAsync(
         GetAllProductsQuery query,
         CancellationToken cancellationToken = default)
     {
-        var products = await _productRepository.GetPagedAsync(
+        var products = await _unitOfWork.Products.GetPagedAsync(
             query.PageNumber,
             query.PageSize,
             query.Search,

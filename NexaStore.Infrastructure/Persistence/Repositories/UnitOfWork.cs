@@ -1,3 +1,4 @@
+
 using NexaStore.Application.Abstractions.Persistence;
 
 namespace NexaStore.Infrastructure.Persistence.Repositories;
@@ -6,9 +7,18 @@ public sealed class UnitOfWork : IUnitOfWork
 {
     private readonly NexaStoreDbContext _context;
 
-    public UnitOfWork(NexaStoreDbContext context)
+    public IProductRepository Products { get; }
+
+    public ICategoryRepository Categories { get; }
+
+    public UnitOfWork(
+        NexaStoreDbContext context,
+        IProductRepository productRepository,
+        ICategoryRepository categoryRepository)
     {
         _context = context;
+        Products = productRepository;
+        Categories = categoryRepository;
     }
 
     public async Task<int> SaveChangesAsync(
