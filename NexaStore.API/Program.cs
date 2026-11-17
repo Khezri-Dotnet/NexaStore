@@ -1,34 +1,129 @@
 
+using System.Text;
+using System.Security.Claims;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+
 using NexaStore.Infrastructure;
 using NexaStore.Infrastructure.Persistence;
+using NexaStore.Infrastructure.Identity;
+
+using NexaStore.Application;
+using NexaStore.Application.Common.Results;
+
 using NexaStore.Application.Features.Products.CreateProduct;
 using NexaStore.Application.Features.Products.GetProductById;
 using NexaStore.Application.Features.Products.GetAllProducts;
 using NexaStore.Application.Features.Products.UpdateProduct;
 using NexaStore.Application.Features.Products.DeleteProduct;
 using NexaStore.Application.Features.Products.DTOs;
-using NexaStore.Application.Common.Results;
-using NexaStore.Application;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Services
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
-// Application Handlers
+
 builder.Services.AddScoped<CreateProductHandler>();
 builder.Services.AddScoped<GetProductByIdHandler>();
 builder.Services.AddScoped<GetAllProductsHandler>();
 builder.Services.AddScoped<UpdateProductHandler>();
 builder.Services.AddScoped<DeleteProductHandler>();
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
 builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+
+// JWT Configuration
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("JWT Key is missing.");
+
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+
+        options.DefaultChallengeScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtKey)),
+
+            RoleClaimType = ClaimTypes.Role,
+            NameClaimType = ClaimTypes.Email,
+
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// Swagger + JWT
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter JWT Bearer token"
+    });
+
+    options.AddSecurityRequirement(document =>
+        new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+        });
+});
 
 var app = builder.Build();
+
+// Seed Roles
+// using (var scope = app.Services.CreateScope())
+// {
+//     var roleManager = scope.ServiceProvider
+//         .GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+
+//     await RoleSeeder.SeedAsync(roleManager);
+// }
+
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+
+    var roleManager = scope.ServiceProvider
+        .GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+
+    var userManager = scope.ServiceProvider
+        .GetRequiredService<UserManager<ApplicationUser>>();
+
+    var adminEmail = builder.Configuration["Admin:Email"]
+        ?? throw new InvalidOperationException("Admin email is missing.");
+
+    await RoleSeeder.SeedAsync(
+        roleManager,
+        userManager,
+        adminEmail);
+}
 
 // Swagger
 if (app.Environment.IsDevelopment())
@@ -36,6 +131,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 
@@ -47,7 +147,8 @@ app.MapGet("/api/health", () =>
         Status = "Healthy",
         Application = "NexaStore"
     });
-});
+})
+.WithTags("Health");
 
 // Database Health Check
 app.MapGet("/api/health/database", async (
@@ -55,15 +156,13 @@ app.MapGet("/api/health/database", async (
     CancellationToken cancellationToken) =>
 {
     var canConnect = await db.Database.CanConnectAsync(
-        cancellationToken
-    );
+        cancellationToken);
 
     if (!canConnect)
     {
         return Results.Problem(
             title: "Database connection failed",
-            statusCode: 503
-        );
+            statusCode: 503);
     }
 
     return Results.Ok(new
@@ -72,19 +171,19 @@ app.MapGet("/api/health/database", async (
         Database = "Connected",
         Provider = "PostgreSQL"
     });
-});
+})
+.WithTags("Health");
 
+// CREATE PRODUCT - Admin Only
 app.MapPost("/api/products", async (
     CreateProductRequest request,
-    CreateProductHandler handler,
+    [FromServices] CreateProductHandler handler,
     CancellationToken cancellationToken) =>
 {
     var result = await handler.HandleAsync(
         request,
-        cancellationToken
-    );
+        cancellationToken);
 
-    // Handle errors
     if (result.IsFailure)
     {
         var statusCode = result.Error!.Code == "Category.NotFound"
@@ -94,27 +193,25 @@ app.MapPost("/api/products", async (
         return Results.Problem(
             title: result.Error.Code,
             detail: result.Error.Message,
-            statusCode: statusCode
-        );
+            statusCode: statusCode);
     }
 
-    // Return 201 Created
     var product = result.Value!;
 
     return Results.Created(
         $"/api/products/{product.Id}",
-        product
-    );
+        product);
 })
+.RequireAuthorization(policy => policy.RequireRole("Admin"))
 .WithName("CreateProduct")
 .WithTags("Products")
 .Produces<ProductResponse>(StatusCodes.Status201Created)
 .ProducesProblem(StatusCodes.Status400BadRequest)
 .ProducesProblem(StatusCodes.Status404NotFound);
 
-
+// GET ALL PRODUCTS - Public
 app.MapGet("/api/products", async (
-    GetAllProductsHandler handler,
+    [FromServices] GetAllProductsHandler handler,
     int pageNumber = 1,
     int pageSize = 10,
     string? search = null,
@@ -132,21 +229,31 @@ app.MapGet("/api/products", async (
     };
 
     if (pageNumber < 1 || pageSize < 1 || pageSize > 100)
-        return Results.BadRequest(new { message = "Invalid pagination parameters." });
+        return Results.BadRequest(new
+        {
+            message = "Invalid pagination parameters."
+        });
 
     if (minPrice < 0 || maxPrice < 0 ||
-        (minPrice.HasValue && maxPrice.HasValue && minPrice > maxPrice))
-        return Results.BadRequest(new { message = "Invalid price range." });
+        (minPrice.HasValue && maxPrice.HasValue &&
+         minPrice > maxPrice))
+    {
+        return Results.BadRequest(new
+        {
+            message = "Invalid price range."
+        });
+    }
 
-    var result = await handler.HandleAsync(query, cancellationToken);
+    var result = await handler.HandleAsync(
+        query,
+        cancellationToken);
 
     if (result.IsFailure)
     {
         return Results.Problem(
             title: result.Error!.Code,
             detail: result.Error.Message,
-            statusCode: StatusCodes.Status500InternalServerError
-        );
+            statusCode: StatusCodes.Status500InternalServerError);
     }
 
     return Results.Ok(result.Value);
@@ -157,17 +264,15 @@ app.MapGet("/api/products", async (
 .Produces(StatusCodes.Status400BadRequest)
 .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-
-
-app.MapGet("/api/products/{id}", async (
+// GET PRODUCT BY ID - Public
+app.MapGet("/api/products/{id:guid}", async (
     Guid id,
-    GetProductByIdHandler handler,
+    [FromServices] GetProductByIdHandler handler,
     CancellationToken cancellationToken) =>
 {
     var result = await handler.HandleAsync(
         id,
-        cancellationToken
-    );
+        cancellationToken);
 
     if (result.IsFailure)
     {
@@ -178,8 +283,7 @@ app.MapGet("/api/products/{id}", async (
         return Results.Problem(
             title: result.Error.Code,
             detail: result.Error.Message,
-            statusCode: statusCode
-        );
+            statusCode: statusCode);
     }
 
     return Results.Ok(result.Value);
@@ -190,17 +294,17 @@ app.MapGet("/api/products/{id}", async (
 .ProducesProblem(StatusCodes.Status404NotFound)
 .ProducesProblem(StatusCodes.Status500InternalServerError);
 
+// UPDATE PRODUCT - Admin Only
 app.MapPut("/api/products/{id:guid}", async (
     Guid id,
     UpdateProductRequest request,
-    UpdateProductHandler handler,
+    [FromServices] UpdateProductHandler handler,
     CancellationToken cancellationToken) =>
 {
     var result = await handler.HandleAsync(
         id,
         request,
-        cancellationToken
-    );
+        cancellationToken);
 
     if (result.IsFailure)
     {
@@ -214,30 +318,27 @@ app.MapPut("/api/products/{id:guid}", async (
         return Results.Problem(
             title: result.Error.Code,
             detail: result.Error.Message,
-            statusCode: statusCode
-        );
+            statusCode: statusCode);
     }
 
     return Results.Ok(result.Value);
 })
+.RequireAuthorization(policy => policy.RequireRole("Admin"))
 .WithName("UpdateProduct")
 .WithTags("Products")
 .Produces<ProductResponse>(StatusCodes.Status200OK)
 .ProducesProblem(StatusCodes.Status400BadRequest)
 .ProducesProblem(StatusCodes.Status404NotFound);
 
-
-
-
+// DELETE PRODUCT - Admin Only
 app.MapDelete("/api/products/{id:guid}", async (
     Guid id,
-    DeleteProductHandler handler,
+    [FromServices] DeleteProductHandler handler,
     CancellationToken cancellationToken) =>
 {
     var result = await handler.HandleAsync(
         id,
-        cancellationToken
-    );
+        cancellationToken);
 
     if (result.IsFailure)
     {
@@ -250,18 +351,16 @@ app.MapDelete("/api/products/{id:guid}", async (
         return Results.Problem(
             title: result.Error.Code,
             detail: result.Error.Message,
-            statusCode: statusCode
-        );
+            statusCode: statusCode);
     }
 
     return Results.NoContent();
 })
+.RequireAuthorization(policy => policy.RequireRole("Admin"))
 .WithName("DeleteProduct")
 .WithTags("Products")
 .Produces(StatusCodes.Status204NoContent)
 .ProducesProblem(StatusCodes.Status400BadRequest)
 .ProducesProblem(StatusCodes.Status404NotFound);
-
-
 
 app.Run();

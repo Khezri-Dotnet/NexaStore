@@ -1,10 +1,14 @@
 
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using NexaStore.Domain.Entities;
+using NexaStore.Infrastructure.Identity;
 
 namespace NexaStore.Infrastructure.Persistence;
 
-public sealed class NexaStoreDbContext : DbContext
+public sealed class NexaStoreDbContext
+    : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
 {
     public NexaStoreDbContext(
         DbContextOptions<NexaStoreDbContext> options)
@@ -15,16 +19,4 @@ public sealed class NexaStoreDbContext : DbContext
     public DbSet<Product> Products => Set<Product>();
 
     public DbSet<Category> Categories => Set<Category>();
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        base.OnModelCreating(modelBuilder);
-
-        modelBuilder.ApplyConfigurationsFromAssembly(
-            typeof(NexaStoreDbContext).Assembly
-        );
-
-        // modelBuilder.Entity<Product>()
-        //     .HasQueryFilter(x => !x.IsDeleted);
-    }
 }

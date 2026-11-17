@@ -46,7 +46,7 @@ public sealed class NexaStoreDbContextFactory
 
         var connectionString = document.RootElement
             .GetProperty("ConnectionStrings")
-            .GetProperty("NexaStoreConnection")
+            .GetProperty("DefaultConnection")
             .GetString();
 
         if (string.IsNullOrWhiteSpace(connectionString))

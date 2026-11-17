@@ -5,6 +5,8 @@ using NexaStore.Application.Features.Categories.GetAllCategories;
 using NexaStore.Application.Features.Categories.UpdateCategory;
 using NexaStore.Application.Features.Categories.DeleteCategory;
 using FluentValidation;
+using NexaStore.Application.Features.Authentication.Register;
+using NexaStore.Application.Features.Authentication.Login;
 
 namespace NexaStore.Application;
 
@@ -20,6 +22,9 @@ public static class DependencyInjection
     services.AddScoped<DeleteCategoryHandler>();
 
     services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+
+    services.AddScoped<RegisterHandler>();
+    services.AddScoped<LoginHandler>();
 
     return services;
 }

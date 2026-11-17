@@ -1,0 +1,74 @@
+using Microsoft.AspNetCore.Identity;
+using NexaStore.Application.Abstractions.Identity;
+
+namespace NexaStore.Infrastructure.Identity;
+
+public sealed class IdentityService : IIdentityService
+{
+    private readonly UserManager<ApplicationUser> _userManager;
+
+    public IdentityService(UserManager<ApplicationUser> userManager)
+    {
+        _userManager = userManager;
+    }
+
+public async Task<Guid?> RegisterAsync(
+    string email,
+    string password,
+    CancellationToken cancellationToken)
+{
+    var existingUser = await _userManager.FindByEmailAsync(email);
+
+    if (existingUser is not null)
+        return null;
+
+    var user = new ApplicationUser
+    {
+        UserName = email,
+        Email = email
+    };
+
+    var result = await _userManager.CreateAsync(user, password);
+
+    if (!result.Succeeded)
+        throw new InvalidOperationException(
+            string.Join(", ", result.Errors.Select(e => e.Description)));
+
+    var roleResult = await _userManager.AddToRoleAsync(user, "Customer");
+
+    if (!roleResult.Succeeded)
+    {
+        await _userManager.DeleteAsync(user);
+
+        throw new InvalidOperationException(
+            string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+    }
+
+    return user.Id;
+}
+
+    public async Task<Guid?> ValidateUserAsync(
+        string email,
+        string password,
+        CancellationToken cancellationToken)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+
+        if (user is null)
+            return null;
+
+        var valid = await _userManager.CheckPasswordAsync(user, password);
+
+        return valid ? user.Id : null;
+    }
+
+    public async Task<IList<string>> GetUserRolesAsync(Guid userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null)
+            return [];
+
+        return await _userManager.GetRolesAsync(user);
+    }
+}
