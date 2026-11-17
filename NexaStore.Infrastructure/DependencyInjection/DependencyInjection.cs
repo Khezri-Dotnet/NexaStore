@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<Application.Abstractions.Authentication.IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<ICartRepository, CartRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
         
 
         return services;

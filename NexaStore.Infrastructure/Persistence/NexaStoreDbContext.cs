@@ -17,12 +17,10 @@ public sealed class NexaStoreDbContext
     }
 
     public DbSet<Product> Products => Set<Product>();
-
     public DbSet<Category> Categories => Set<Category>();
-
     public DbSet<Cart> Carts => Set<Cart>();
-
     public DbSet<CartItem> CartItems => Set<CartItem>();
+    public DbSet<Order> Orders => Set<Order>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -66,6 +64,51 @@ public sealed class NexaStoreDbContext
                 .WithMany()
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Order configuration
+        builder.Entity<Order>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(x => x.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(x => x.OrderDate)
+                .IsRequired();
+
+            entity.Property(x => x.Status)
+                .IsRequired();
+
+            entity.Navigation(x => x.Items)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            entity.OwnsMany(x => x.Items, item =>
+            {
+                item.ToTable("OrderItems");
+
+                item.WithOwner()
+                    .HasForeignKey("OrderId");
+
+                item.Property<Guid>("Id");
+
+                item.HasKey("Id");
+
+                item.Property(x => x.ProductId)
+                    .IsRequired();
+
+                item.Property(x => x.ProductName)
+                    .HasMaxLength(200)
+                    .IsRequired();
+
+                item.Property(x => x.UnitPrice)
+                    .HasPrecision(18, 2);
+
+                item.Property(x => x.Quantity)
+                    .IsRequired();
+            });
         });
     }
 }

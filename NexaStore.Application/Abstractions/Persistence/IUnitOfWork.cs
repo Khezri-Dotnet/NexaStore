@@ -6,11 +6,10 @@ namespace NexaStore.Application.Abstractions.Persistence;
 public interface IUnitOfWork
 {
     IProductRepository Products { get; }
-
     ICategoryRepository Categories { get; }
     ICartRepository Carts { get; }
+    IOrderRepository Orders { get; }
 
     Task<int> SaveChangesAsync(
-        CancellationToken cancellationToken = default
-    );
+        CancellationToken cancellationToken = default);
 }

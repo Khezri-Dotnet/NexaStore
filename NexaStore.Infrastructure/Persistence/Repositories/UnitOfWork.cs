@@ -10,17 +10,20 @@ public sealed class UnitOfWork : IUnitOfWork
     public IProductRepository Products { get; }
     public ICategoryRepository Categories { get; }
     public ICartRepository Carts { get; }
+    public IOrderRepository Orders { get; }
 
     public UnitOfWork(
         NexaStoreDbContext context,
         IProductRepository productRepository,
         ICategoryRepository categoryRepository,
-        ICartRepository cartRepository)
+        ICartRepository cartRepository,
+        IOrderRepository orderRepository)
     {
         _context = context;
         Products = productRepository;
         Categories = categoryRepository;
         Carts = cartRepository;
+        Orders = orderRepository;
     }
 
     public async Task<int> SaveChangesAsync(

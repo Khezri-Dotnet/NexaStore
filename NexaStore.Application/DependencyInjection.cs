@@ -21,6 +21,9 @@ using NexaStore.Application.Features.Carts.AddCartItem;
 using NexaStore.Application.Features.Carts.UpdateCartItem;
 using NexaStore.Application.Features.Carts.RemoveCartItem;
 using NexaStore.Application.Features.Carts.ClearCart;
+using NexaStore.Application.Features.Orders.CreateOrder;
+using NexaStore.Application.Features.Orders.GetOrderById;
+using NexaStore.Application.Features.Orders.GetMyOrders;
 
 namespace NexaStore.Application;
 
@@ -52,6 +55,9 @@ public static class DependencyInjection
         services.AddScoped<UpdateCartItemHandler>();
         services.AddScoped<RemoveCartItemHandler>();
         services.AddScoped<ClearCartHandler>();
+        services.AddScoped<CreateOrderHandler>();
+        services.AddScoped<GetOrderByIdHandler>();
+        services.AddScoped<GetMyOrdersHandler>();
 
         // Validation
         services.AddValidatorsFromAssembly(
