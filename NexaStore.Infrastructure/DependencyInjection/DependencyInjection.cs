@@ -7,7 +7,6 @@ using NexaStore.Infrastructure.Identity;
 using NexaStore.Infrastructure.Persistence;
 using NexaStore.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
-using NexaStore.Infrastructure.Identity;
 
 namespace NexaStore.Infrastructure;
 

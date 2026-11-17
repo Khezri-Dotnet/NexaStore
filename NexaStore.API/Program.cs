@@ -9,10 +9,26 @@ using Microsoft.OpenApi;
 
 using NexaStore.Infrastructure;
 using NexaStore.Infrastructure.Identity;
-
 using NexaStore.Application;
+using NexaStore.API.Middleware;
+
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog
+builder.Host.UseSerilog((context, configuration) =>
+{
+    configuration
+        .MinimumLevel.Information()
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("Application", "NexaStore.API")
+        .WriteTo.Console(
+            outputTemplate:
+            "[{Timestamp:HH:mm:ss} {Level:u3}] " +
+            "{Message:lj} " +
+            "{Properties:j}{NewLine}{Exception}");
+});
 
 // Application & Infrastructure
 builder.Services.AddApplication();
@@ -112,6 +128,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Middleware
+app.UseMiddleware<CorrelationIdMiddleware>();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.UseSerilogRequestLogging();
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
@@ -119,4 +142,17 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+try
+{
+    Log.Information("Starting NexaStore API");
+
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "NexaStore API terminated unexpectedly");
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}
