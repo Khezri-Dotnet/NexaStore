@@ -16,6 +16,11 @@ using NexaStore.Application.Features.Products.DeleteProduct;
 
 using NexaStore.Application.Features.Authentication.Register;
 using NexaStore.Application.Features.Authentication.Login;
+using NexaStore.Application.Features.Carts.GetCart;
+using NexaStore.Application.Features.Carts.AddCartItem;
+using NexaStore.Application.Features.Carts.UpdateCartItem;
+using NexaStore.Application.Features.Carts.RemoveCartItem;
+using NexaStore.Application.Features.Carts.ClearCart;
 
 namespace NexaStore.Application;
 
@@ -41,6 +46,12 @@ public static class DependencyInjection
         // Authentication
         services.AddScoped<RegisterHandler>();
         services.AddScoped<LoginHandler>();
+
+        services.AddScoped<GetCartHandler>();
+        services.AddScoped<AddCartItemHandler>();
+        services.AddScoped<UpdateCartItemHandler>();
+        services.AddScoped<RemoveCartItemHandler>();
+        services.AddScoped<ClearCartHandler>();
 
         // Validation
         services.AddValidatorsFromAssembly(
