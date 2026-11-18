@@ -13,8 +13,34 @@ using NexaStore.Application;
 using NexaStore.API.Middleware;
 
 using Serilog;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // options.AddFixedWindowLimiter("auth", limiter =>
+    // {
+    //     limiter.PermitLimit = 5;
+    //     limiter.Window = TimeSpan.FromMinutes(1);
+    //     limiter.QueueLimit = 0;
+    //     limiter.AutoReplenishment = true;
+    // });
+
+    options.AddPolicy("auth", context =>
+    RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+});
 
 // Serilog
 builder.Host.UseSerilog((context, configuration) =>
@@ -131,12 +157,28 @@ if (app.Environment.IsDevelopment())
 // Middleware
 app.UseMiddleware<CorrelationIdMiddleware>();
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+//app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        context.Response.Headers["X-Frame-Options"] = "DENY";
+        context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        context.Response.Headers["Permissions-Policy"] =
+            "camera=(), microphone=(), geolocation=()";
+
+        return Task.CompletedTask;
+    });
+
+    await next();
+});
 
 app.UseSerilogRequestLogging();
 
 app.UseHttpsRedirection();
 
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

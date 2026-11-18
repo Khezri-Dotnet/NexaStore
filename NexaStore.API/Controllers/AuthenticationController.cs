@@ -5,6 +5,7 @@ using NexaStore.Application.Features.Authentication.Login;
 using NexaStore.Application.Features.Authentication.DTOs;
 using NexaStore.Application.Abstractions.Authentication;
 using NexaStore.Application.Abstractions.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace NexaStore.API.Controllers;
 
@@ -33,6 +34,7 @@ public sealed class AuthenticationController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Register(
         RegisterRequest request,
         CancellationToken cancellationToken)
@@ -45,6 +47,7 @@ public sealed class AuthenticationController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthResponse>> Login(
         LoginRequest request,
         CancellationToken cancellationToken)

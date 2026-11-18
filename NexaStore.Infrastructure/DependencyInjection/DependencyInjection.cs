@@ -27,8 +27,32 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString)
         );
 
+        // services
+        // .AddIdentityCore<ApplicationUser>()
+        // .AddRoles<IdentityRole<Guid>>()
+        // .AddEntityFrameworkStores<NexaStoreDbContext>();
+       
+
+        // این تغییر سه قابلیت امنیتی ایجاد می‌کند:
+        // - حداقل رمز عبور ۱۲ کاراکتر با ترکیب الزامی حروف، عدد و نماد.
+        // - جلوگیری از ثبت ایمیل تکراری.
+        // - قفل موقت حساب پس از ۵ تلاش ناموفق
         services
-        .AddIdentityCore<ApplicationUser>()
+        .AddIdentityCore<ApplicationUser>(options =>
+        {
+            options.Password.RequiredLength = 12;
+            options.Password.RequireDigit = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireNonAlphanumeric = true;
+
+            options.User.RequireUniqueEmail = true;
+
+            options.Lockout.AllowedForNewUsers = true;
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.DefaultLockoutTimeSpan =
+                TimeSpan.FromMinutes(15);
+        })
         .AddRoles<IdentityRole<Guid>>()
         .AddEntityFrameworkStores<NexaStoreDbContext>();
         // .AddDefaultTokenProviders();
