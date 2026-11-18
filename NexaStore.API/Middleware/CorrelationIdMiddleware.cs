@@ -6,6 +6,7 @@ namespace NexaStore.API.Middleware;
 public sealed class CorrelationIdMiddleware
 {
     private const string HeaderName = "X-Correlation-ID";
+    private const int MaxCorrelationIdLength = 100;
 
     private readonly RequestDelegate _next;
 
@@ -19,7 +20,8 @@ public sealed class CorrelationIdMiddleware
         var correlationId =
             context.Request.Headers[HeaderName].FirstOrDefault();
 
-        if (string.IsNullOrWhiteSpace(correlationId))
+        if (string.IsNullOrWhiteSpace(correlationId) ||
+            correlationId.Length > MaxCorrelationIdLength)
         {
             correlationId = Guid.NewGuid().ToString();
         }

@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
@@ -39,12 +40,19 @@ public sealed class ExceptionHandlingMiddleware
             context.Response.StatusCode =
                 StatusCodes.Status500InternalServerError;
 
+            context.Response.Headers["X-Correlation-ID"] =
+                context.TraceIdentifier;
+
             await context.Response.WriteAsJsonAsync(
                 new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
                     Title = "Internal Server Error",
-                    Detail = "An unexpected error occurred."
+                    Detail = "An unexpected error occurred.",
+                    Extensions =
+                    {
+                        ["correlationId"] = context.TraceIdentifier
+                    }
                 });
         }
     }
