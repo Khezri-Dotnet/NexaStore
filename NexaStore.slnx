@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/NexaStore.API.IntegrationTests/NexaStore.API.IntegrationTests.csproj" />
+  </Folder>
   <Project Path="NexaStore.API/NexaStore.API.csproj" />
   <Project Path="NexaStore.Application/NexaStore.Application.csproj" />
   <Project Path="NexaStore.Domain/NexaStore.Domain.csproj" />
