@@ -27,6 +27,8 @@ public sealed class NexaStoreDbContext
     {
         base.OnModelCreating(builder);
 
+        builder.ApplyConfigurationsFromAssembly(typeof(NexaStoreDbContext).Assembly);
+
         builder.Entity<Cart>(entity =>
         {
             entity.HasKey(x => x.Id);
