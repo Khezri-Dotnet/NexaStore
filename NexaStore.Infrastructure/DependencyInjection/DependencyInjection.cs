@@ -8,6 +8,8 @@ using NexaStore.Infrastructure.Persistence;
 using NexaStore.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
 using NexaStore.Application.Abstractions.Authentication;
+using NexaStore.Infrastructure.Services;
+using NexaStore.Application.Common.Interfaces;
 
 namespace NexaStore.Infrastructure;
 
@@ -55,7 +57,12 @@ public static class DependencyInjection
         })
         .AddRoles<IdentityRole<Guid>>()
         .AddEntityFrameworkStores<NexaStoreDbContext>();
-        // .AddDefaultTokenProviders();
+        
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = configuration.GetConnectionString("Redis");
+            options.InstanceName = "NexaStore:";
+        });
 
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -65,6 +72,7 @@ public static class DependencyInjection
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddScoped<ICacheService, RedisCacheService>();
         
 
         return services;

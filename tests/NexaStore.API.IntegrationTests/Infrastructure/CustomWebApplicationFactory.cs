@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using NexaStore.Infrastructure.Persistence;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace NexaStore.API.IntegrationTests.Infrastructure;
 
@@ -43,6 +44,9 @@ public sealed class CustomWebApplicationFactory
 
             services.RemoveAll<
                 IDbContextOptionsConfiguration<NexaStoreDbContext>>();
+
+            services.RemoveAll<IDistributedCache>();
+            services.AddDistributedMemoryCache();
 
             services.AddDbContext<NexaStoreDbContext>(options =>
             {

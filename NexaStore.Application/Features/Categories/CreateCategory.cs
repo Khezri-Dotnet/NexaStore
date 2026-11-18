@@ -4,6 +4,7 @@ using NexaStore.Application.Abstractions.Persistence;
 using NexaStore.Application.Common.Results;
 using NexaStore.Application.Features.Categories.DTOs;
 using NexaStore.Domain.Entities;
+using NexaStore.Application.Common.Interfaces;
 
 namespace NexaStore.Application.Features.Categories.CreateCategory;
 
@@ -11,13 +12,16 @@ public sealed class CreateCategoryHandler
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<CreateCategoryRequest> _validator;
+    private readonly ICacheService _cacheService;
 
     public CreateCategoryHandler(
-        IUnitOfWork unitOfWork,
-        IValidator<CreateCategoryRequest> validator)
+    IUnitOfWork unitOfWork,
+    IValidator<CreateCategoryRequest> validator,
+    ICacheService cacheService)
     {
         _unitOfWork = unitOfWork;
         _validator = validator;
+        _cacheService = cacheService;
     }
 
     public async Task<Result<Guid>> Handle(
@@ -69,6 +73,12 @@ public sealed class CreateCategoryHandler
         );
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _cacheService.SetAsync(
+        "categories:version",
+        Guid.NewGuid().ToString("N"),
+        TimeSpan.FromDays(365),
+        cancellationToken);
 
         return Result<Guid>.Success(category.Id);
     }

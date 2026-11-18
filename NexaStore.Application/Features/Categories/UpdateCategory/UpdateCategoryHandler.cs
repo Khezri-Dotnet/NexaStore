@@ -3,6 +3,7 @@ using FluentValidation;
 using NexaStore.Application.Abstractions.Persistence;
 using NexaStore.Application.Common.Results;
 using NexaStore.Application.Features.Categories.DTOs;
+using NexaStore.Application.Common.Interfaces;
 
 namespace NexaStore.Application.Features.Categories.UpdateCategory;
 
@@ -10,13 +11,16 @@ public sealed class UpdateCategoryHandler
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<UpdateCategoryRequest> _validator;
+    private readonly ICacheService _cacheService;
 
     public UpdateCategoryHandler(
-        IUnitOfWork unitOfWork,
-        IValidator<UpdateCategoryRequest> validator)
+    IUnitOfWork unitOfWork,
+    IValidator<UpdateCategoryRequest> validator,
+    ICacheService cacheService)
     {
         _unitOfWork = unitOfWork;
         _validator = validator;
+        _cacheService = cacheService;
     }
 
     public async Task<Result> Handle(
@@ -79,6 +83,12 @@ public sealed class UpdateCategoryHandler
         category.UpdateDetails(categoryName, request.Description);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _cacheService.SetAsync(
+        "categories:version",
+        Guid.NewGuid().ToString("N"),
+        TimeSpan.FromDays(365),
+        cancellationToken);
 
         return Result.Success();
     }

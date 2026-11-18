@@ -3,16 +3,21 @@ using NexaStore.Application.Abstractions.Persistence;
 using NexaStore.Application.Common.Results;
 using NexaStore.Application.Features.Products.DTOs;
 using NexaStore.Domain.Entities;
+using NexaStore.Application.Common.Interfaces;
 
 namespace NexaStore.Application.Features.Products.CreateProduct;
 
 public sealed class CreateProductHandler
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICacheService _cacheService;
 
-    public CreateProductHandler(IUnitOfWork unitOfWork)
+    public CreateProductHandler(
+        IUnitOfWork unitOfWork,
+        ICacheService cacheService)
     {
         _unitOfWork = unitOfWork;
+        _cacheService = cacheService;
     }
 
     public async Task<Result<ProductResponse>> HandleAsync(
@@ -101,6 +106,8 @@ public sealed class CreateProductHandler
 
         // 4. Save changes
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+            
+        await _cacheService.SetAsync("products:version", Guid.NewGuid().ToString("N"), TimeSpan.FromDays(365), cancellationToken);
 
         // 5. Map to response DTO
         var response = new ProductResponse(
