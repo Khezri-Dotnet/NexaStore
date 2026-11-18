@@ -1,3 +1,4 @@
+
 using NexaStore.Application.Abstractions.Identity;
 using NexaStore.Application.Abstractions.Authentication;
 using NexaStore.Application.Features.Authentication.DTOs;
@@ -10,13 +11,16 @@ public sealed class LoginHandler
 {
     private readonly IIdentityService _identityService;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IRefreshTokenService _refreshTokenService;
 
     public LoginHandler(
         IIdentityService identityService,
-        IJwtTokenGenerator jwtTokenGenerator)
+        IJwtTokenGenerator jwtTokenGenerator,
+        IRefreshTokenService refreshTokenService)
     {
         _identityService = identityService;
         _jwtTokenGenerator = jwtTokenGenerator;
+        _refreshTokenService = refreshTokenService;
     }
 
     public async Task<AuthResponse> Handle(
@@ -29,18 +33,25 @@ public sealed class LoginHandler
             cancellationToken);
 
         if (userId is null)
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            throw new UnauthorizedAccessException(
+                "Invalid email or password.");
 
-        var roles = await _identityService.GetUserRolesAsync(userId.Value);
+        var roles = await _identityService.GetUserRolesAsync(
+            userId.Value);
 
-        var token = _jwtTokenGenerator.GenerateToken(
+        var accessToken = _jwtTokenGenerator.GenerateToken(
             userId.Value,
             command.Email,
             roles);
 
+        var refreshToken = await _refreshTokenService.CreateAsync(
+            userId.Value,
+            cancellationToken);
+
         return new AuthResponse(
             userId.Value,
             command.Email,
-            token);
+            accessToken,
+            refreshToken);
     }
 }

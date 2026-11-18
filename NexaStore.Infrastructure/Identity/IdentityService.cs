@@ -71,4 +71,11 @@ public async Task<Guid?> RegisterAsync(
 
         return await _userManager.GetRolesAsync(user);
     }
+
+    public async Task<string?> GetUserEmailAsync(Guid userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+
+        return user?.Email;
+    }
 }

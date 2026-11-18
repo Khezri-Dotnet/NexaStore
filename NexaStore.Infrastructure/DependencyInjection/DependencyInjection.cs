@@ -7,6 +7,7 @@ using NexaStore.Infrastructure.Identity;
 using NexaStore.Infrastructure.Persistence;
 using NexaStore.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
+using NexaStore.Application.Abstractions.Authentication;
 
 namespace NexaStore.Infrastructure;
 
@@ -39,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<Application.Abstractions.Authentication.IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         
 
         return services;

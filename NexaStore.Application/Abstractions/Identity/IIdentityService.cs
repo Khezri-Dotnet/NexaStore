@@ -1,3 +1,4 @@
+
 namespace NexaStore.Application.Abstractions.Identity;
 
 public interface IIdentityService
@@ -13,4 +14,6 @@ public interface IIdentityService
         CancellationToken cancellationToken);
 
     Task<IList<string>> GetUserRolesAsync(Guid userId);
+
+    Task<string?> GetUserEmailAsync(Guid userId);
 }
