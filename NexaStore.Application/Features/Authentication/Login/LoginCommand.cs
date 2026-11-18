@@ -36,12 +36,19 @@ public sealed class LoginHandler
             throw new UnauthorizedAccessException(
                 "Invalid email or password.");
 
+        var email = await _identityService.GetUserEmailAsync(
+            userId.Value);
+
+        if (string.IsNullOrWhiteSpace(email))
+            throw new InvalidOperationException(
+                "Authenticated user email is unavailable.");
+
         var roles = await _identityService.GetUserRolesAsync(
             userId.Value);
 
         var accessToken = _jwtTokenGenerator.GenerateToken(
             userId.Value,
-            command.Email,
+            email,
             roles);
 
         var refreshToken = await _refreshTokenService.CreateAsync(
@@ -50,7 +57,7 @@ public sealed class LoginHandler
 
         return new AuthResponse(
             userId.Value,
-            command.Email,
+            email,
             accessToken,
             refreshToken);
     }

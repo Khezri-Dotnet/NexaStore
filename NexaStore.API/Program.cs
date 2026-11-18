@@ -87,6 +87,8 @@ builder.Services
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
 
+                ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+
                 ValidIssuer = builder.Configuration["Jwt:Issuer"],
                 ValidAudience = builder.Configuration["Jwt:Audience"],
 
@@ -157,7 +159,7 @@ if (app.Environment.IsDevelopment())
 // Middleware
 app.UseMiddleware<CorrelationIdMiddleware>();
 
-//app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.Use(async (context, next) =>
 {
     context.Response.OnStarting(() =>

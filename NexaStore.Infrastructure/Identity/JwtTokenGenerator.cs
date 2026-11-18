@@ -22,6 +22,15 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
         string email,
         IList<string> roles)
     {
+        if (userId == Guid.Empty)
+            throw new ArgumentException("User ID is invalid.", nameof(userId));
+
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("Email is required.", nameof(email));
+
+        if (roles is null || roles.Any(string.IsNullOrWhiteSpace))
+            throw new ArgumentException("User roles are invalid.", nameof(roles));
+
         var key = _configuration["Jwt:Key"]
             ?? throw new InvalidOperationException("JWT Key is missing.");
 

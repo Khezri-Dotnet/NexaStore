@@ -92,9 +92,26 @@ public sealed class RefreshTokenService : IRefreshTokenService
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    // private static string HashToken(string token)
+    // {
+    //     var hash = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+    //     return Convert.ToHexString(hash);
+    // }
+
     private static string HashToken(string token)
     {
+        if (string.IsNullOrWhiteSpace(token))
+            throw new ArgumentException(
+                "Refresh token cannot be empty.",
+                nameof(token));
+
+        if (token.Length > 512)
+            throw new ArgumentException(
+                "Refresh token is too long.",
+                nameof(token));
+
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+
         return Convert.ToHexString(hash);
     }
 

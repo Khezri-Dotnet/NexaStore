@@ -1,6 +1,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using NexaStore.Application.Common.Exceptions;
 
 namespace NexaStore.API.Middleware;
 
@@ -36,9 +37,32 @@ public sealed class ExceptionHandlingMiddleware
             if (context.Response.HasStarted)
                 throw;
 
+            var (statusCode, title, detail) = ex switch
+            {
+                UnauthorizedAccessException =>
+                    (StatusCodes.Status401Unauthorized,
+                     "Unauthorized",
+                     "Invalid email or password."),                     
+
+                     RegistrationValidationException =>
+                (StatusCodes.Status400BadRequest,
+                "Bad Request",
+                "User registration failed."),
+
+                ArgumentException =>
+                    (StatusCodes.Status400BadRequest,
+                     "Bad Request",
+                     "The request contains invalid data."),
+
+                _ =>
+                    (StatusCodes.Status500InternalServerError,
+                     "Internal Server Error",
+                     "An unexpected error occurred."),
+                     
+            };
+
             context.Response.Clear();
-            context.Response.StatusCode =
-                StatusCodes.Status500InternalServerError;
+            context.Response.StatusCode = statusCode;
 
             context.Response.Headers["X-Correlation-ID"] =
                 context.TraceIdentifier;
@@ -46,9 +70,9 @@ public sealed class ExceptionHandlingMiddleware
             await context.Response.WriteAsJsonAsync(
                 new ProblemDetails
                 {
-                    Status = StatusCodes.Status500InternalServerError,
-                    Title = "Internal Server Error",
-                    Detail = "An unexpected error occurred.",
+                    Status = statusCode,
+                    Title = title,
+                    Detail = detail,
                     Extensions =
                     {
                         ["correlationId"] = context.TraceIdentifier

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using NexaStore.Application.Abstractions.Identity;
+using NexaStore.Application.Common.Exceptions;
 
 namespace NexaStore.Infrastructure.Identity;
 
@@ -30,18 +31,29 @@ public async Task<Guid?> RegisterAsync(
 
     var result = await _userManager.CreateAsync(user, password);
 
+    // if (!result.Succeeded)
+    //     throw new InvalidOperationException(
+    //         string.Join(", ", result.Errors.Select(e => e.Description)));
+
     if (!result.Succeeded)
-        throw new InvalidOperationException(
-            string.Join(", ", result.Errors.Select(e => e.Description)));
+    throw new InvalidOperationException(
+        "User registration failed.");
 
     var roleResult = await _userManager.AddToRoleAsync(user, "Customer");
 
+    // if (!roleResult.Succeeded)
+    // {
+    //     await _userManager.DeleteAsync(user);
+
+    //     throw new InvalidOperationException(
+    //         string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+    // }
     if (!roleResult.Succeeded)
     {
         await _userManager.DeleteAsync(user);
 
         throw new InvalidOperationException(
-            string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+            "User role assignment failed.");
     }
 
     return user.Id;
@@ -84,9 +96,12 @@ public async Task<Guid?> RegisterAsync(
 
         return await _userManager.GetRolesAsync(user);
     }
-
+    
     public async Task<string?> GetUserEmailAsync(Guid userId)
     {
+        if (userId == Guid.Empty)
+            return null;
+
         var user = await _userManager.FindByIdAsync(userId.ToString());
 
         return user?.Email;
