@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using NexaStore.Application.Features.Orders.CreateOrder;
 using NexaStore.Application.Features.Orders.GetMyOrders;
 using NexaStore.Application.Features.Orders.GetOrderById;
+using NexaStore.Application.Features.Orders.CancelOrder;
 
 namespace NexaStore.API.Controllers;
 
@@ -16,15 +17,18 @@ public sealed class OrdersController : ControllerBase
     private readonly CreateOrderHandler _createOrderHandler;
     private readonly GetOrderByIdHandler _getOrderByIdHandler;
     private readonly GetMyOrdersHandler _getMyOrdersHandler;
+    private readonly CancelOrderHandler _cancelOrderHandler;
 
     public OrdersController(
         CreateOrderHandler createOrderHandler,
         GetOrderByIdHandler getOrderByIdHandler,
-        GetMyOrdersHandler getMyOrdersHandler)
+        GetMyOrdersHandler getMyOrdersHandler,
+        CancelOrderHandler cancelOrderHandler)
     {
         _createOrderHandler = createOrderHandler;
         _getOrderByIdHandler = getOrderByIdHandler;
         _getMyOrdersHandler = getMyOrdersHandler;
+        _cancelOrderHandler = cancelOrderHandler;
     }
 
     [HttpPost]
@@ -87,5 +91,26 @@ public sealed class OrdersController : ControllerBase
             return BadRequest(result.Error);
 
         return Ok(result.Value);
+    }
+
+    [HttpPost("{id:guid}/cancel")]
+    public async Task<IActionResult> CancelOrder(
+    Guid id,
+    CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            out var customerId))
+            return Unauthorized();
+
+        var result = await _cancelOrderHandler.Handle(
+            id,
+            customerId,
+            cancellationToken);
+
+        if (!result.IsSuccess)
+            return BadRequest(result.Error);
+
+        return NoContent();
     }
 }

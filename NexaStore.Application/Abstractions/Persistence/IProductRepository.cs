@@ -21,11 +21,16 @@ public interface IProductRepository
     );
 
     Task<PagedResult<Product>> GetPagedAsync(
-    int pageNumber,
-    int pageSize,
-    string? search,
-    decimal? minPrice,
-    decimal? maxPrice,
-    CancellationToken cancellationToken = default
-);
+        int pageNumber,
+        int pageSize,
+        string? search,
+        decimal? minPrice,
+        decimal? maxPrice,
+        CancellationToken cancellationToken = default
+    );
+    
+    Task<(int StockBefore, int StockAfter)?> TryDecreaseStockAsync(
+            Guid productId,
+            int quantity,
+            CancellationToken cancellationToken = default);
 }

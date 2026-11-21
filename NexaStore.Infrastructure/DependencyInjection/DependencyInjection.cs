@@ -73,6 +73,7 @@ public static class DependencyInjection
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<ICacheService, RedisCacheService>();
+        services.AddScoped<IInventoryRepository, InventoryRepository>();
         
 
         return services;

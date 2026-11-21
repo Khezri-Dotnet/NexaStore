@@ -84,4 +84,34 @@ public sealed class ProductRepository : IProductRepository
             TotalCount = totalCount
         };
     }
+
+    public async Task<(int StockBefore, int StockAfter)?> TryDecreaseStockAsync(
+    Guid productId,
+    int quantity,
+    CancellationToken cancellationToken = default)
+    {
+        if (quantity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity));
+
+        var now = DateTime.UtcNow;
+
+        var stockValues = await _context.Database
+            .SqlQuery<int>($"""
+                UPDATE "Products"
+                SET "StockQuantity" = "StockQuantity" - {quantity},
+                    "UpdatedAt" = {now}
+                WHERE "Id" = {productId}
+                AND "StockQuantity" >= {quantity}
+                AND NOT "IsDeleted"
+                RETURNING "StockQuantity" AS "Value"
+                """)
+            .ToListAsync(cancellationToken);
+
+        if (stockValues.Count == 0)
+            return null;
+
+        var stockAfter = stockValues[0];
+
+        return (stockAfter + quantity, stockAfter);
+    }
 }

@@ -22,6 +22,8 @@ public sealed class NexaStoreDbContext
     public DbSet<CartItem> CartItems => Set<CartItem>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<StockReservation> StockReservations => Set<StockReservation>();
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -137,3 +139,4 @@ public sealed class NexaStoreDbContext
         });
     }
 }
+

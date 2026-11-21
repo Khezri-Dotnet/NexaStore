@@ -308,6 +308,89 @@ namespace NexaStore.Infrastructure.Persistence.Migrations
                     b.ToTable("Products");
                 });
 
+            modelBuilder.Entity("NexaStore.Domain.Entities.StockMovement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ReservationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("StockAfter")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StockBefore")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ReservationId");
+
+                    b.ToTable("StockMovements");
+                });
+
+            modelBuilder.Entity("NexaStore.Domain.Entities.StockReservation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("OrderId", "ProductId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "ExpiresAt");
+
+                    b.ToTable("StockReservations");
+                });
+
             modelBuilder.Entity("NexaStore.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -554,6 +637,40 @@ namespace NexaStore.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("NexaStore.Domain.Entities.StockMovement", b =>
+                {
+                    b.HasOne("NexaStore.Domain.Entities.Order", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("NexaStore.Domain.Entities.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("NexaStore.Domain.Entities.StockReservation", null)
+                        .WithMany()
+                        .HasForeignKey("ReservationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("NexaStore.Domain.Entities.StockReservation", b =>
+                {
+                    b.HasOne("NexaStore.Domain.Entities.Order", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("NexaStore.Domain.Entities.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("NexaStore.Infrastructure.Identity.RefreshToken", b =>
